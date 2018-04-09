@@ -1,5 +1,5 @@
 *.lst
-*.swp
+*.asm.swp
 *.map
 *.out
 *.obj
