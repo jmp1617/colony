@@ -72,13 +72,13 @@ gen_end:
         .asciiz "    ===="
 
 w_board_size:
-        .asciiz "WARNING: illegal board size, try again: "
+        .asciiz "\nWARNING: illegal board size, try again: "
 w_generation:
-        .asciiz "WARNING: illegal number of generations, try again: "
+        .asciiz "\nWARNING: illegal number of generations, try again: "
 w_cells:
-        .asciiz "WARNING: illegal number of live cells, try again: "
+        .asciiz "\nWARNING: illegal number of live cells, try again: "
 w_locations:
-        .asciiz "ERROR: illegal point location"
+        .asciiz "\nERROR: illegal point location"
 
 #
 # CODE
@@ -113,33 +113,71 @@ main:
         la      $v0, PRINT_STRING       # get and store board size     
         la      $a0, e_board_size
         syscall
+        j       good_board
+warn_board:
+        la      $v0, PRINT_STRING       # wrong size
+        la      $a0, w_board_size
+        syscall
+good_board:
         la      $v0, READ_INT
         syscall
-        la      $t0, input_data
+        li      $t4, 4
+        li      $t5, 30
+        slt     $t6, $v0, $t4
+        bne     $t6, $zero, warn_board
+        slt     $t6, $t5, $v0
+        bne     $t6, $zero, warn_board
+
+        la      $t0, input_data         # store the board size
         sw      $v0, 0($t0)
+
         #------ board init ------
         move    $a0, $v0
         jal     init_board
         #------------------------
+
         la      $v0, PRINT_STRING       # get and store number of generations
         la      $a0, e_generation
         syscall
+        j       good_gen
+warn_gen:
+        la      $v0, PRINT_STRING       # wrong gen
+        la      $a0, w_generation
+        syscall
+good_gen:
         la      $v0, READ_INT
         syscall
+        li      $t5, 20
+        slt     $t6, $t5, $v0
+        bne     $t6, $zero, warn_gen
+        bltz    $v0, warn_gen
+
         sw      $v0, 4($t0)
 
         la      $v0, PRINT_STRING       # get number of A cells
         la      $a0, e_a_cells
         syscall
+        j       good_cell_a
+warn_cell_a:
+        la      $v0, PRINT_STRING       # wrong cell count
+        la      $a0, w_cells
+        syscall
+good_cell_a:
         la      $v0, READ_INT
         syscall
+        lw      $t5, 0($t0)
+        mul     $t5, $t5, $t5           # number of cells on the board
+        slt     $t6, $t5, $v0
+        bne     $t6, $zero, warn_cell_a
+        bltz    $v0, warn_cell_a
+
         move    $t2, $v0
         sw      $v0, 8($t0)
-
 
         la      $v0, PRINT_STRING       # print locations string
         la      $a0, e_locations
         syscall
+        beq     $t2, $zero, done_a_loc
         addi    $t2, $t2, -1            # for loop count
 a_loc_loop:                             # get coords and process
         la      $v0, READ_INT
@@ -151,15 +189,32 @@ a_loc_loop:                             # get coords and process
 
         addi    $t2, $t2, -1
         bgez    $t2, a_loc_loop
-        
+done_a_loc:
 
         la      $v0, PRINT_STRING       # get number of b cells
         la      $a0, e_b_cells
         syscall
+        j       good_cell_b
+warn_cell_b:                            # wrong number of cells
+        la      $v0, PRINT_STRING
+        la      $a0, w_cells
+        syscall
+good_cell_b:
         la      $v0, READ_INT
         syscall
+        lw      $t5, 0($t0)
+        mul     $t5, $t5, $t5           # number of cells on the board
+        slt     $t6, $t5, $v0
+        bne     $t6, $zero, warn_cell_b
+        bltz    $v0, warn_cell_b
+
         move    $t2, $v0
         sw      $v0, 12($t0)
+
+        la      $v0, PRINT_STRING       # print locations string
+        la      $a0, e_locations
+        syscall
+        beq     $t2, $zero, done_b_loc
         addi    $t2, $t2, -1
 b_loc_loop:
         la      $v0, READ_INT
@@ -171,7 +226,7 @@ b_loc_loop:
 
         addi    $t2, $t2, -1
         bgez    $t2, b_loc_loop
-         
+done_b_loc:
 
 #-------------------------------
         lw      $ra, 0($sp)
