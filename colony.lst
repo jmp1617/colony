@@ -1,0 +1,233 @@
+   1 0000               # AUTHOR:       Jacob Potter
+   2 0000               #
+   3 0000               # DESCRIPTION:
+   4 0000               #       This program runs the the colony simulation.
+   5 0000               #
+   6 0000               #
+   7 0000               
+   8 0000               #
+   9 0000               # CONSTANTS
+  10 0000               #
+  11 0000               
+  12 0000               MAX_CELLS = 900
+  13 0000               
+  14 0000               PRINT_STRING = 4                # syscall
+  15 0000               PRINT_INT = 1
+  16 0000               READ_INT = 5
+  17 0000               
+  18 0000               #
+  19 0000               # DATA
+  20 0000               #
+  21 0000                       .data
+  22 0000               
+  23 0000                       .align  2
+  24 0000               
+  25 0000               input_data:
+  26 0000 00000000	        .space  16             # holds the input data: board size, gens, a, b
+          00000000
+          00000000
+          00000000
+  27 0010               
+  28 0010               grid_main:                      # main colony grid
+  29 0010 00000000	        .space  4*MAX_CELLS
+          00000000
+          00000000
+          00000000
+          00000000
+          00000000
+  30 0e20               
+  31 0e20               grid_temp:                      # temporary colony grid
+  32 0e20 00000000	        .space  4*MAX_CELLS
+          00000000
+          00000000
+          00000000
+          00000000
+          00000000
+  33 1c30               
+  34 1c30               #
+  35 1c30               # STRINGS
+  36 1c30               #
+  37 1c30                       .align  0
+  38 1c30               
+  39 1c30               newline:
+  40 1c30 0A00    	        .asciiz "\n"
+  41 1c32               space:
+  42 1c32 2000    	        .asciiz " "
+  43 1c34               pipe:
+  44 1c34 7C00    	        .asciiz "|"
+  45 1c36               plus:
+  46 1c36 2B00    	        .asciiz "+"
+  47 1c38               minus:
+  48 1c38 2D00    	        .asciiz "-"
+  49 1c3a               a:
+  50 1c3a 4100    	        .asciiz "A"
+  51 1c3c               b:
+  52 1c3c 4200    	        .asciiz "B"
+  53 1c3e               
+  54 1c3e               e_board_size:
+  55 1c3e 456E7465	        .asciiz "Enter board size: "
+          7220626F
+          61726420
+          73697A65
+          3A2000  
+  56 1c51               e_generation:
+  57 1c51 456E7465	        .asciiz "Enter number of generations to run: "
+          72206E75
+          6D626572
+          206F6620
+          67656E65
+          72617469
+  58 1c76               e_a_cells:
+  59 1c76 456E7465	        .asciiz "Enter number of live cells for colony A: "
+          72206E75
+          6D626572
+          206F6620
+          6C697665
+          2063656C
+  60 1ca0               e_b_cells:
+  61 1ca0 456E7465	        .asciiz "Enter number of live cells for colony B: "
+          72206E75
+          6D626572
+          206F6620
+          6C697665
+          2063656C
+  62 1cca               e_locations:
+  63 1cca 53746172	        .asciiz "Start entering locations"
+          7420656E
+          74657269
+          6E67206C
+          6F636174
+          696F6E73
+  64 1ce3               banner:
+  65 1ce3 0A2A2A2A	        .ascii  "\n**********************\n"
+          2A2A2A2A
+          2A2A2A2A
+          2A2A2A2A
+          2A2A2A2A
+          2A2A2A0A
+  66 1cfb 2A2A2A2A	        .ascii  "****    Colony    ****\n"
+          20202020
+          436F6C6F
+          6E792020
+          20202A2A
+          2A2A0A  
+  67 1d12 2A2A2A2A	        .asciiz "**********************\n\n"
+          2A2A2A2A
+          2A2A2A2A
+          2A2A2A2A
+          2A2A2A2A
+          2A2A0A0A
+  68 1d2b               gen_start:
+  69 1d2b 3D3D3D3D	        .asciiz "====    GENERATION "
+          20202020
+          47454E45
+          52415449
+          4F4E2000
+  70 1d3f               gen_end:
+  71 1d3f 20202020	        .asciiz "    ===="
+          3D3D3D3D
+          00      
+  72 1d48               
+  73 1d48               w_board_size:
+  74 1d48 5741524E	        .asciiz "WARNING: illegal board size, try again: "
+          494E473A
+          20696C6C
+          6567616C
+          20626F61
+          72642073
+  75 1d71               w_generation:
+  76 1d71 5741524E	        .asciiz "WARNING: illegal number of generations, try again: "
+          494E473A
+          20696C6C
+          6567616C
+          206E756D
+          62657220
+  77 1da5               w_cells:
+  78 1da5 5741524E	        .asciiz "WARNING: illegal number of live cells, try again: "
+          494E473A
+          20696C6C
+          6567616C
+          206E756D
+          62657220
+  79 1dd8               w_locations:
+  80 1dd8 4552524F	        .asciiz "ERROR: illegal point location"
+          523A2069
+          6C6C6567
+          616C2070
+          6F696E74
+          206C6F63
+  81 1df6               
+  82 1df6               #
+  83 1df6               # CODE
+  84 1df6               #
+  85 0000                       .text
+  86 0000                       .align  2
+  87 0000                       .globl  main
+  88 0000               
+  89 0000               #
+  90 0000               # Name:         main
+  91 0000               #
+  92 0000               # Arguments:    none
+  93 0000               # Returns:      none
+  94 0000               #
+  95 0000               main:
+  96 0000               #-------------------------------
+  97 0000 23BDFFDC	        addi    $sp, $sp, -36
+  98 0004 AFBF0000	        sw      $ra, 0($sp)
+  99 0008 AFB00004	        sw      $s0, 4($sp)
+ 100 000c AFB10008	        sw      $s1, 8($sp)
+ 101 0010 AFB2000C	        sw      $s2, 12($sp)
+ 102 0014 AFB30010	        sw      $s3, 16($sp)
+ 103 0018 AFB40014	        sw      $s4, 20($sp)
+ 104 001c AFB50018	        sw      $s5, 24($sp)
+ 105 0020 AFB6001C	        sw      $s6, 28($sp)
+ 106 0024 AFB70020	        sw      $s7, 32($sp)
+ 107 0028               #--------------------------------
+ 108 0028               
+ 109 0028 34020004	        li      $v0, PRINT_STRING
+ 110 002c 3C040000	        la      $a0, banner
+     0030 34840000
+ 111 0034 0000000C	        syscall
+ 112 0038               
+ 113 0038               #-------------------------------
+ 114 0038 8FBF0000	        lw      $ra, 0($sp)
+ 115 003c 8FB00004	        lw      $s0, 4($sp)
+ 116 0040 8FB10008	        lw      $s1, 8($sp)
+ 117 0044 8FB2000C	        lw      $s2, 12($sp)
+ 118 0048 8FB30010	        lw      $s3, 16($sp)
+ 119 004c 8FB40014	        lw      $s4, 20($sp)
+ 120 0050 8FB50018	        lw      $s5, 24($sp)
+ 121 0054 8FB6001C	        lw      $s6, 28($sp)
+ 122 0058 8FB70020	        lw      $s7, 32($sp)
+ 123 005c 23BD0024	        addi    $sp, $sp, 36
+ 124 0060 03E00008	        jr      $ra
+ 125 0064               #--------------------------------
+
+
+MAX_CELLS     = 00000384   
+PRINT_INT     = 00000001   
+PRINT_STRING  = 00000004   
+READ_INT      = 00000005   
+a               00001C3A R  data 
+b               00001C3C R  data 
+banner          00001CE3 R  data 
+e_a_cells       00001C76 R  data 
+e_b_cells       00001CA0 R  data 
+e_board_size    00001C3E R  data 
+e_generation    00001C51 R  data 
+e_locations     00001CCA R  data 
+gen_end         00001D3F R  data 
+gen_start       00001D2B R  data 
+grid_main       00000010 R  data 
+grid_temp       00000E20 R  data 
+input_data      00000000 R  data 
+main            00000000 RG text 
+minus           00001C38 R  data 
+newline         00001C30 R  data 
+pipe            00001C34 R  data 
+plus            00001C36 R  data 
+space           00001C32 R  data 
+w_board_size    00001D48 R  data 
+w_cells         00001DA5 R  data 
+w_generation    00001D71 R  data 
+w_locations     00001DD8 R  data 
