@@ -13,6 +13,7 @@ MAX_CELLS = 900
 
 PRINT_STRING = 4                # syscall
 PRINT_INT = 1
+PRINT_CHAR = 11
 READ_INT = 5
 
 #
@@ -105,11 +106,10 @@ main:
         sw      $s6, 28($sp)
         sw      $s7, 32($sp)
 #--------------------------------
-
         la      $v0, PRINT_STRING
         la      $a0, banner
         syscall
-        # get board size and generations
+        # get input and process
         la      $v0, PRINT_STRING       # get and store board size     
         la      $a0, e_board_size
         syscall
@@ -117,7 +117,10 @@ main:
         syscall
         la      $t0, input_data
         sw      $v0, 0($t0)
-        
+        #------ board init ------
+        move    $a0, $v0
+        jal     init_board
+        #------------------------
         la      $v0, PRINT_STRING       # get and store number of generations
         la      $a0, e_generation
         syscall
@@ -187,6 +190,8 @@ b_loc_loop:
 
 # Name:         write_cell
 # 
+# Name:         write_cell
+# 
 # Adds a cell to a location based on a coord
 #
 # Arguments:    a0: x location
@@ -210,6 +215,48 @@ write_cell:
 
 	 
 
+#-------------------------------
+        lw      $ra, 0($sp)
+        lw      $s0, 4($sp)
+        lw      $s1, 8($sp)
+        lw      $s2, 12($sp)
+        lw      $s3, 16($sp)
+        lw      $s4, 20($sp)
+        lw      $s5, 24($sp)
+        lw      $s6, 28($sp)
+        lw      $s7, 32($sp)
+        addi    $sp, $sp, 36
+        jr      $ra
+
+#--------------------------------
+# fills the memory for the board with spaces
+#
+# Arguments:    a0: size
+# Returns:      none
+#
+init_board:
+#-------------------------------
+        addi    $sp, $sp, -36
+        sw      $ra, 0($sp)
+        sw      $s0, 4($sp)
+        sw      $s1, 8($sp)
+        sw      $s2, 12($sp)
+        sw      $s3, 16($sp)
+        sw      $s4, 20($sp)
+        sw      $s5, 24($sp)
+        sw      $s6, 28($sp)
+        sw      $s7, 32($sp)
+#--------------------------------
+        li      $s3, 32                 # ascii value of space
+        move    $s0, $a0
+        mul     $s0, $s0, $s0
+        addi    $s0, $s0, -1
+        la      $s1, grid_main          # address of the main grid
+fill_loop:
+        sw      $s3, 0($s1)
+        addi    $s1, $s1, 4
+        addi    $s0, $s0, -1
+        bgez    $s0, fill_loop
 #-------------------------------
         lw      $ra, 0($sp)
         lw      $s0, 4($sp)
