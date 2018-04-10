@@ -79,7 +79,7 @@ w_generation:
 w_cells:
         .asciiz "\nWARNING: illegal number of live cells, try again: "
 w_locations:
-        .asciiz "\nERROR: illegal point location"
+        .asciiz "\nERROR: illegal point location\n"
 
 #
 # CODE
@@ -129,8 +129,8 @@ good_board:
         slt     $t6, $t5, $v0
         bne     $t6, $zero, warn_board
 
-        la      $t0, input_data         # store the board size
-        sw      $v0, 0($t0)
+        la      $s5, input_data         # store the board size
+        sw      $v0, 0($s5)
 
         #------ board init ------
         move    $a0, $v0
@@ -153,7 +153,7 @@ good_gen:
         bne     $t6, $zero, warn_gen
         bltz    $v0, warn_gen
 
-        sw      $v0, 4($t0)
+        sw      $v0, 4($s5)
 
         la      $v0, PRINT_STRING       # get number of A cells
         la      $a0, e_a_cells
@@ -166,14 +166,14 @@ warn_cell_a:
 good_cell_a:
         la      $v0, READ_INT
         syscall
-        lw      $t5, 0($t0)
+        lw      $t5, 0($s5)
         mul     $t5, $t5, $t5           # number of cells on the board
         slt     $t6, $t5, $v0
         bne     $t6, $zero, warn_cell_a
         bltz    $v0, warn_cell_a
 
         move    $t2, $v0
-        sw      $v0, 8($t0)
+        sw      $v0, 8($s5)
 
         la      $v0, PRINT_STRING       # print locations string
         la      $a0, e_locations
@@ -189,7 +189,16 @@ a_loc_loop:                             # get coords and process
         move    $s2, $v0
 
         #------ Write cell -----
-
+        move    $a0, $s2
+        move    $a1, $s1
+        li      $a2, 65
+        jal     write_cell
+        bne     $v0, $zero, done_write_a
+        la      $v0, PRINT_STRING
+        la      $a0, w_locations
+        syscall
+        j       done_main
+done_write_a:
         #-----------------------
 
         addi    $t2, $t2, -1
@@ -207,14 +216,14 @@ warn_cell_b:                            # wrong number of cells
 good_cell_b:
         la      $v0, READ_INT
         syscall
-        lw      $t5, 0($t0)
+        lw      $t5, 0($s5)
         mul     $t5, $t5, $t5           # number of cells on the board
         slt     $t6, $t5, $v0
         bne     $t6, $zero, warn_cell_b
         bltz    $v0, warn_cell_b
 
         move    $t2, $v0
-        sw      $v0, 12($t0)
+        sw      $v0, 12($s5)
 
         la      $v0, PRINT_STRING       # print locations string
         la      $a0, e_locations
@@ -230,15 +239,24 @@ b_loc_loop:
         move    $s2, $v0
 
         #------ Write cell -----
-
+        move    $a0, $s2
+        move    $a1, $s1
+        li      $a2, 66
+        jal     write_cell
+        bne     $v0, $zero, done_write_b
+        la      $v0, PRINT_STRING
+        la      $a0, w_locations
+        syscall
+        j       done_main
+done_write_b:
         #-----------------------
 
         addi    $t2, $t2, -1
         bgez    $t2, b_loc_loop
 done_b_loc:
-        lw      $a0, 4($t0)
+        lw      $a0, 4($s5)
         jal     run_generations
-
+done_main:
 #-------------------------------
         lw      $ra, 0($sp)
         lw      $s0, 4($sp)
@@ -432,8 +450,26 @@ write_cell:
         mul     $s3, $s1, $s2   # y * board size
         add     $s3, $s3, $s0   # (y*board size) + x : index of array
         la      $s4, grid_main
-        add     $s4, $s4, $s3 
-        sb      $a3, 0($s4)     # write the char
+        add     $s4, $s4, $s3
+        # error check
+        mul     $s5, $s2, $s2   # max length
+        slt     $s6, $s5, $s3   # out of bounds right
+        bne     $s6, $zero, error
+        slt     $s6, $s4, $zero # less than zero
+        bne     $s6, $zero, error
+        slt     $s6, $s0, $zero
+        bne     $s6, $zero, error
+        slt     $s6, $s1, $zero
+        bne     $s6, $zero, error
+        # ----------- 
+        sb      $a2, 0($s4)     # write the char
+        j       safe
+error:  
+        li      $v0, 0
+        j       done_write
+safe:
+        li      $v0, 1
+done_write:
 #-------------------------------
         lw      $ra, 0($sp)
         lw      $s0, 4($sp)
