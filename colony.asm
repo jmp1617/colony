@@ -484,7 +484,7 @@ done_write:
         jr      $ra
 #--------------------------------
 
-
+ 
 # Name:         init_board
 # 
 # fills the memory for the board with spaces
@@ -516,6 +516,89 @@ fill_loop:
         addi    $s0, $s0, -1
         bgez    $s0, fill_loop
 #-------------------------------
+        lw      $ra, 0($sp)
+        lw      $s0, 4($sp)
+        lw      $s1, 8($sp)
+        lw      $s2, 12($sp)
+        lw      $s3, 16($sp)
+        lw      $s4, 20($sp)
+        lw      $s5, 24($sp)
+        lw      $s6, 28($sp)
+        lw      $s7, 32($sp)
+        addi    $sp, $sp, 36
+        jr      $ra
+#--------------------------------
+
+# Name: Count Neighbors
+# 
+# returns n value
+#
+# Arguments:    a0: x coord
+#               a1: y coord
+#               a2: good neighbor ascii ( A or B ) (65 or 66)
+# Returns:      v0: n
+#
+count_neigh:
+#-------------------------------
+        addi    $sp, $sp, -36
+        sw      $ra, 0($sp)
+        sw      $s0, 4($sp)
+        sw      $s1, 8($sp)
+        sw      $s2, 12($sp)
+        sw      $s3, 16($sp)
+        sw      $s4, 20($sp)
+        sw      $s5, 24($sp)
+        sw      $s6, 28($sp)
+        sw      $s7, 32($sp)
+#--------------------------------
+#-------------------------------
+        lw      $ra, 0($sp)
+        lw      $s0, 4($sp)
+        lw      $s1, 8($sp)
+        lw      $s2, 12($sp)
+        lw      $s3, 16($sp)
+        lw      $s4, 20($sp)
+        lw      $s5, 24($sp)
+        lw      $s6, 28($sp)
+        lw      $s7, 32($sp)
+        addi    $sp, $sp, 36
+        jr      $ra
+#--------------------------------
+
+
+# Name: get value
+# 
+# returns ascii at a location
+#
+# Arguments:    a0: x coord
+#               a1: y coord
+# Returns:      v0: ascii at that location
+#
+get_val:
+#-------------------------------
+        addi    $sp, $sp, -36
+        sw      $ra, 0($sp)
+        sw      $s0, 4($sp)
+        sw      $s1, 8($sp)
+        sw      $s2, 12($sp)
+        sw      $s3, 16($sp)
+        sw      $s4, 20($sp)
+        sw      $s5, 24($sp)
+        sw      $s6, 28($sp)
+        sw      $s7, 32($sp)
+#--------------------------------
+
+        move    $s0, $a0        # s0 is x
+        move    $s1, $a1        # s1 is y
+        la      $t0, input_data
+        lw      $s2, 0($t0)     # board size
+        mul     $s3, $s1, $s2   # y * board size
+        add     $s3, $s3, $s0   # (y*board size) + x : index of array
+        la      $s4, grid_main
+        add     $s4, $s4, $s3
+        lb      $v0, 0($s4)
+
+#--------------------------------
         lw      $ra, 0($sp)
         lw      $s0, 4($sp)
         lw      $s1, 8($sp)
