@@ -25,6 +25,10 @@ READ_INT = 5
 
 input_data:
         .space  16              # holds the input data: board size, gens, a, b
+x_offset:
+        .word   1,1,1,0,0,-1,-1,-1
+y_offset:
+        .word   1,0,-1,1,-1,1,0,-1
 
         .align  0               # char byte align
 grid_main:                      # main colony grid
@@ -551,7 +555,52 @@ count_neigh:
         sw      $s6, 28($sp)
         sw      $s7, 32($sp)
 #--------------------------------
-#-------------------------------
+        move    $s3, $a0        # x
+        move    $s4, $a1        # y
+        la      $s0, x_offset
+        la      $s1, y_offset
+        li      $s2, 7
+        la      $s5, input_data
+        lw      $s5, 0($s5)     # board size
+
+        move    $s7, $zero
+neigh_check:
+        #=======================
+        lw      $t0, 0($s0)
+        lw      $t1, 0($s1)
+        add     $t0, $t0, $s3
+        add     $t1, $t1, $s4
+        # mod the coords by the size of the board to enable wrap
+        add     $t0, $t0, $s5   # mod the board size
+        div     $t0, $s5
+        mfhi    $t0
+        add     $t1, $t1, $s5   # mod the board size
+        div     $t1, $s5
+        mfhi    $t1
+        move    $a0, $t1
+        move    $a1, $t0
+        jal     get_val
+        beq     $a2, $v0, friend_n
+        li      $t3, 32         # space
+        beq     $t3, $v0, space_n
+        j       enemy_n         # else enemy
+friend_n:
+        addi    $s7, $s7, 1     # if friendly, add 1
+        j       done_n
+space_n:                        # if space, add nothing
+        j       done_n
+enemy_n:                        # if enemy sub 1
+        addi    $s7, $s7, -1
+done_n:
+        #=======================
+	addi    $s0, $s0, 4
+        addi    $s1, $s1, 4
+        addi    $s2, $s2, -1
+        bgez    $s2, neigh_check
+
+        move    $v0, $s7
+
+#--------------------------------
         lw      $ra, 0($sp)
         lw      $s0, 4($sp)
         lw      $s1, 8($sp)
