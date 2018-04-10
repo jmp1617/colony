@@ -24,13 +24,14 @@ READ_INT = 5
         .align  2
 
 input_data:
-        .space  16             # holds the input data: board size, gens, a, b
+        .space  16              # holds the input data: board size, gens, a, b
 
+        .align  0               # char byte align
 grid_main:                      # main colony grid
-        .space  4*MAX_CELLS
+        .space  MAX_CELLS
 
 grid_temp:                      # temporary colony grid
-        .space  4*MAX_CELLS
+        .space  MAX_CELLS
 
 #
 # STRINGS
@@ -67,9 +68,9 @@ banner:
         .ascii  "****    Colony    ****\n"
         .asciiz "**********************\n\n"
 gen_start:
-        .asciiz "====    GENERATION "
+        .asciiz "\n====    GENERATION "
 gen_end:
-        .asciiz "    ===="
+        .asciiz "    ====\n"
 
 w_board_size:
         .asciiz "\nWARNING: illegal board size, try again: "
@@ -187,6 +188,10 @@ a_loc_loop:                             # get coords and process
         syscall
         move    $s2, $v0
 
+        #------ Write cell -----
+
+        #-----------------------
+
         addi    $t2, $t2, -1
         bgez    $t2, a_loc_loop
 done_a_loc:
@@ -224,9 +229,164 @@ b_loc_loop:
         syscall
         move    $s2, $v0
 
+        #------ Write cell -----
+
+        #-----------------------
+
         addi    $t2, $t2, -1
         bgez    $t2, b_loc_loop
 done_b_loc:
+        lw      $a0, 4($t0)
+        jal     run_generations
+
+#-------------------------------
+        lw      $ra, 0($sp)
+        lw      $s0, 4($sp)
+        lw      $s1, 8($sp)
+        lw      $s2, 12($sp)
+        lw      $s3, 16($sp)
+        lw      $s4, 20($sp)
+        lw      $s5, 24($sp)
+        lw      $s6, 28($sp)
+        lw      $s7, 32($sp)
+        addi    $sp, $sp, 36
+        jr      $ra
+#--------------------------------
+
+
+# Name:         run generations
+# 
+# runs the generations
+#
+# Arguments:    a0: number of generations
+# Returns:      none
+#
+run_generations:
+#-------------------------------
+        addi    $sp, $sp, -36
+        sw      $ra, 0($sp)
+        sw      $s0, 4($sp)
+        sw      $s1, 8($sp)
+        sw      $s2, 12($sp)
+        sw      $s3, 16($sp)
+        sw      $s4, 20($sp)
+        sw      $s5, 24($sp)
+        sw      $s6, 28($sp)
+        sw      $s7, 32($sp)
+#--------------------------------
+
+	move    $s0, $a0
+        addi    $s0, $s0, 1
+        move    $s1, $zero
+gen_loop:
+        la      $v0, PRINT_STRING
+        la      $a0, gen_start
+        syscall
+        la      $v0, PRINT_INT
+        move    $a0, $s1
+        syscall
+        la      $v0, PRINT_STRING
+        la      $a0, gen_end
+        syscall       
+        jal     print_board 
+
+
+        addi    $s1, $s1, 1
+        bne     $s1, $s0, gen_loop
+
+#-------------------------------
+        lw      $ra, 0($sp)
+        lw      $s0, 4($sp)
+        lw      $s1, 8($sp)
+        lw      $s2, 12($sp)
+        lw      $s3, 16($sp)
+        lw      $s4, 20($sp)
+        lw      $s5, 24($sp)
+        lw      $s6, 28($sp)
+        lw      $s7, 32($sp)
+        addi    $sp, $sp, 36
+        jr      $ra
+#--------------------------------
+
+
+# Name:         print_board
+# 
+# prints the main board
+#
+# Arguments:    none
+# Returns:      none
+#
+print_board:
+#-------------------------------
+        addi    $sp, $sp, -36
+        sw      $ra, 0($sp)
+        sw      $s0, 4($sp)
+        sw      $s1, 8($sp)
+        sw      $s2, 12($sp)
+        sw      $s3, 16($sp)
+        sw      $s4, 20($sp)
+        sw      $s5, 24($sp)
+        sw      $s6, 28($sp)
+        sw      $s7, 32($sp)
+#--------------------------------
+        la      $s0, input_data
+        lw      $s1, 0($s0)     #s1 is board size
+        la      $s2, grid_main  #s2 is address of the grid first char
+        move    $t0, $zero      #counter
+	# print upper wall
+        la      $v0, PRINT_STRING
+        la      $a0, plus
+        syscall
+        la      $a0, minus
+upperwall:
+	syscall
+        addi    $t0, $t0, 1
+        bne     $t0, $s1, upperwall
+        la      $a0, plus
+        syscall
+        la      $a0, newline
+        syscall
+        #print grid-------------
+        move    $t0, $zero      # row counter
+        move    $t2, $zero      # index in grid array
+rows_printed:                   # outer loop
+        move    $t1, $zero      # col counter
+        la      $a0, pipe
+        syscall
+print_row:                      # inner loop
+        #=======================
+        add     $s3, $s2, $t2   # calculate address of value at index
+        lb      $a0, 0($s3)     # get the value
+        la      $v0, PRINT_CHAR
+        syscall
+        addi    $t1, $t1, 1
+        addi    $t2, $t2, 1
+        bne     $t1, $s1, print_row
+        #=======================
+        la      $v0, PRINT_STRING
+        la      $a0, pipe
+        syscall        
+        la      $a0, newline
+        syscall
+        addi    $t0, $t0, 1
+        bne     $t0, $s1, rows_printed
+
+        #-----------------------
+        # print lower wall
+        move    $t0, $zero
+        la      $v0, PRINT_STRING
+        la      $a0, plus
+        syscall
+        la      $a0, minus
+lowerwall:
+	syscall
+        addi    $t0, $t0, 1
+        bne     $t0, $s1, lowerwall
+        la      $a0, plus
+        syscall
+        la      $a0, newline
+        syscall
+         
 
 #-------------------------------
         lw      $ra, 0($sp)
@@ -245,13 +405,11 @@ done_b_loc:
 
 # Name:         write_cell
 # 
-# Name:         write_cell
-# 
 # Adds a cell to a location based on a coord
 #
 # Arguments:    a0: x location
 #               a1: y location
-#               a2: 0 for A, 1 for B
+#               a2: ascii for char to write
 # Returns:      1 if valid location, zero otherwise
 #
 write_cell:
@@ -282,8 +440,11 @@ write_cell:
         lw      $s7, 32($sp)
         addi    $sp, $sp, 36
         jr      $ra
-
 #--------------------------------
+
+
+# Name:         init_board
+# 
 # fills the memory for the board with spaces
 #
 # Arguments:    a0: size
@@ -308,8 +469,8 @@ init_board:
         addi    $s0, $s0, -1
         la      $s1, grid_main          # address of the main grid
 fill_loop:
-        sw      $s3, 0($s1)
-        addi    $s1, $s1, 4
+        sb      $s3, 0($s1)
+        addi    $s1, $s1, 1             # 1 byte align
         addi    $s0, $s0, -1
         bgez    $s0, fill_loop
 #-------------------------------
