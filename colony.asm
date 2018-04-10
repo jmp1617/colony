@@ -424,10 +424,16 @@ write_cell:
         sw      $s5, 24($sp)
         sw      $s6, 28($sp)
         sw      $s7, 32($sp)
-#--------------------------------
-
-	 
-
+#-------------------------------
+        move    $s0, $a0        # s0 is x
+        move    $s1, $a1        # s1 is y
+        la      $t0, input_data
+        lw      $s2, 0($t0)     # board size
+        mul     $s3, $s1, $s2   # y * board size
+        add     $s3, $s3, $s0   # (y*board size) + x : index of array
+        la      $s4, grid_main
+        add     $s4, $s4, $s3 
+        sb      $a3, 0($s4)     # write the char
 #-------------------------------
         lw      $ra, 0($sp)
         lw      $s0, 4($sp)
