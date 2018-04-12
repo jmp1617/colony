@@ -377,8 +377,10 @@ cyc_inner:
         jal     count_neigh     
         move    $s5, $v0        # count of B neighbors
 cell_is_a:
+        sub     $s6, $s4, $s5   # A - B in s6
         j       done_cyc
 cell_is_b:
+        sub     $s6, $s5, $s4   # B - A in s6
         j       done_cyc
 cell_is_dead:
         
@@ -727,3 +729,66 @@ get_val:
         jr      $ra
 #--------------------------------
 
+
+# Name:         write_temp
+# 
+# Adds a cell to a location based on a coord
+#
+# Arguments:    a0: x location
+#               a1: y location
+#               a2: ascii for char to write
+# Returns:      1 if valid location, zero otherwise
+#
+write_temp:
+#-------------------------------
+        addi    $sp, $sp, -36
+        sw      $ra, 0($sp)
+        sw      $s0, 4($sp)
+        sw      $s1, 8($sp)
+        sw      $s2, 12($sp)
+        sw      $s3, 16($sp)
+        sw      $s4, 20($sp)
+        sw      $s5, 24($sp)
+        sw      $s6, 28($sp)
+        sw      $s7, 32($sp)
+#-------------------------------
+        move    $s0, $a0        # s0 is x
+        move    $s1, $a1        # s1 is y
+        la      $t0, input_data
+        lw      $s2, 0($t0)     # board size
+        mul     $s3, $s1, $s2   # y * board size
+        add     $s3, $s3, $s0   # (y*board size) + x : index of array
+        la      $s4, grid_temp
+        add     $s4, $s4, $s3
+        # error check
+        mul     $s5, $s2, $s2   # max length
+        slt     $s6, $s5, $s3   # out of bounds right
+        bne     $s6, $zero, error
+        slt     $s6, $s4, $zero # less than zero
+        bne     $s6, $zero, error
+        slt     $s6, $s0, $zero
+        bne     $s6, $zero, error
+        slt     $s6, $s1, $zero
+        bne     $s6, $zero, error
+        # ----------- 
+        sb      $a2, 0($s4)     # write the char
+        j       safe
+error_t:  
+        li      $v0, 0
+        j       done_write
+safe_t:
+        li      $v0, 1
+done_write_t:
+#-------------------------------
+        lw      $ra, 0($sp)
+        lw      $s0, 4($sp)
+        lw      $s1, 8($sp)
+        lw      $s2, 12($sp)
+        lw      $s3, 16($sp)
+        lw      $s4, 20($sp)
+        lw      $s5, 24($sp)
+        lw      $s6, 28($sp)
+        lw      $s7, 32($sp)
+        addi    $sp, $sp, 36
+        jr      $ra
+#--------------------------------
