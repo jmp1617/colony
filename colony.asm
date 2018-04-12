@@ -311,10 +311,83 @@ gen_loop:
         la      $a0, gen_end
         syscall       
         jal     print_board 
-
+        #=======================
+        jal     colony_cycle 
+        #=======================
 
         addi    $s1, $s1, 1
         bne     $s1, $s0, gen_loop
+
+#-------------------------------
+        lw      $ra, 0($sp)
+        lw      $s0, 4($sp)
+        lw      $s1, 8($sp)
+        lw      $s2, 12($sp)
+        lw      $s3, 16($sp)
+        lw      $s4, 20($sp)
+        lw      $s5, 24($sp)
+        lw      $s6, 28($sp)
+        lw      $s7, 32($sp)
+        addi    $sp, $sp, 36
+        jr      $ra
+#--------------------------------
+
+
+# Name:         colony_cycle
+# 
+# runs a generatain of colony
+#
+# Arguments:    none
+# Returns:      none
+#
+colony_cycle:
+#-------------------------------
+        addi    $sp, $sp, -36
+        sw      $ra, 0($sp)
+        sw      $s0, 4($sp)
+        sw      $s1, 8($sp)
+        sw      $s2, 12($sp)
+        sw      $s3, 16($sp)
+        sw      $s4, 20($sp)
+        sw      $s5, 24($sp)
+        sw      $s6, 28($sp)
+        sw      $s7, 32($sp)
+#--------------------------------
+
+        move    $s0, $zero      # x value
+        move    $s1, $zero      # y value
+        la      $s2, input_data
+        lw      $s2, 0($s2)     # board width
+cyc_outer:
+        move    $s0, $zero
+cyc_inner:
+        #=======================
+        move    $a0, $s0
+        move    $a1, $s1
+        jal     get_val
+        move    $s3, $v0
+        li      $s4, 65
+        li      $s5, 66
+        move    $a0, $s0
+        move    $a1, $s1
+        move    $a2, $s4
+        jal     count_neigh
+        move    $s4, $v0        # count of A neighbors
+        move    $a2, $s5
+        jal     count_neigh     
+        move    $s5, $v0        # count of B neighbors
+cell_is_a:
+        j       done_cyc
+cell_is_b:
+        j       done_cyc
+cell_is_dead:
+        
+done_cyc:
+        #=======================        
+        addi    $s0, $s0, 1
+        bne     $s2, $s0, cyc_inner
+        addi    $s1, $s1, 1
+        bne     $s2, $s1, cyc_outer
 
 #-------------------------------
         lw      $ra, 0($sp)
@@ -581,16 +654,9 @@ neigh_check:
         move    $a1, $t0
         jal     get_val
         beq     $a2, $v0, friend_n
-        li      $t3, 32         # space
-        beq     $t3, $v0, space_n
-        j       enemy_n         # else enemy
+        j       done_n
 friend_n:
         addi    $s7, $s7, 1     # if friendly, add 1
-        j       done_n
-space_n:                        # if space, add nothing
-        j       done_n
-enemy_n:                        # if enemy sub 1
-        addi    $s7, $s7, -1
 done_n:
         #=======================
 	addi    $s0, $s0, 4
@@ -660,3 +726,4 @@ get_val:
         addi    $sp, $sp, 36
         jr      $ra
 #--------------------------------
+
