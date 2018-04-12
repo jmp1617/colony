@@ -365,7 +365,7 @@ cyc_inner:
         move    $a0, $s0
         move    $a1, $s1
         jal     get_val
-        move    $s3, $v0
+        move    $s3, $v0        # ascii at that location
         li      $s4, 65
         li      $s5, 66
         move    $a0, $s0
@@ -376,14 +376,43 @@ cyc_inner:
         move    $a2, $s5
         jal     count_neigh     
         move    $s5, $v0        # count of B neighbors
-cell_is_a:
-        sub     $s6, $s4, $s5   # A - B in s6
+        li      $t0, 32
+        beq     $t0, $s3, cell_is_dead
+        li      $t0, 66
+        beq     $t0, $s3, cell_is_b
+        #-=-=-=-=-=-=-=-=-=-=-=-
+        sub     $s6, $s4, $s5   # A - B in s6 # cell is A
+        li      $t0, 2
+        slt     $t0, $s6, $t0   # if A-B < 2
+        bne     $t0, $zero, kill_a
+        li      $t0, 3
+        slt     $t0, $t0, $s6   # if 3 < A-B ( A>=4)
+        bne     $t0, $zero, kill_a
+stay_a:                         # else, A-B = 2 or 3 so it stays alive
+        move    $a0, $s0
+        move    $a1, $s1
+        li      $a2, 65
+        jal     write_temp
+        j       done_a_state
+kill_a:
+        move    $a0, $s0
+        move    $a1, $s1
+        li      $a2, 32
+        jal     write_temp
+done_a_state:
+        #-=-=-=-=-=-=-=-=-=-=-=-
         j       done_cyc
 cell_is_b:
-        sub     $s6, $s5, $s4   # B - A in s6
+        #-=-=-=-=-=-=-=-=-=-=-=-
+        sub     $s6, $s5, $s4   # B - A in s6 # cell is B
+stay_b:
+kill_b:
+        #-=-=-=-=-=-=-=-=-=-=-=-
         j       done_cyc
-cell_is_dead:
-        
+cell_is_dead:                                 # cell is dead
+        #-=-=-=-=-=-=-=-=-=-=-=-
+                
+        #-=-=-=-=-=-=-=-=-=-=-=-
 done_cyc:
         #=======================        
         addi    $s0, $s0, 1
@@ -589,9 +618,12 @@ init_board:
         mul     $s0, $s0, $s0
         addi    $s0, $s0, -1
         la      $s1, grid_main          # address of the main grid
+        la      $s4, grid_temp          # address of the temp grid
 fill_loop:
         sb      $s3, 0($s1)
+        sb      $s3, 0($s4)
         addi    $s1, $s1, 1             # 1 byte align
+        addi    $s4, $s4, 1
         addi    $s0, $s0, -1
         bgez    $s0, fill_loop
 #-------------------------------
@@ -763,19 +795,19 @@ write_temp:
         # error check
         mul     $s5, $s2, $s2   # max length
         slt     $s6, $s5, $s3   # out of bounds right
-        bne     $s6, $zero, error
+        bne     $s6, $zero, error_t
         slt     $s6, $s4, $zero # less than zero
-        bne     $s6, $zero, error
+        bne     $s6, $zero, error_t
         slt     $s6, $s0, $zero
-        bne     $s6, $zero, error
+        bne     $s6, $zero, error_t
         slt     $s6, $s1, $zero
-        bne     $s6, $zero, error
+        bne     $s6, $zero, error_t
         # ----------- 
         sb      $a2, 0($s4)     # write the char
-        j       safe
+        j       safe_t
 error_t:  
         li      $v0, 0
-        j       done_write
+        j       done_write_t
 safe_t:
         li      $v0, 1
 done_write_t:
