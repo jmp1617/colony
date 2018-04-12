@@ -405,14 +405,53 @@ done_a_state:
 cell_is_b:
         #-=-=-=-=-=-=-=-=-=-=-=-
         sub     $s6, $s5, $s4   # B - A in s6 # cell is B
+        li      $t0, 2
+        slt     $t0, $s6, $t0   # if B-A < 2
+        bne     $t0, $zero, kill_b
+        li      $t0, 3
+        slt     $t0, $t0, $s6   # if 3 < B-A ( B>=4)
+        bne     $t0, $zero, kill_b
 stay_b:
+        move    $a0, $s0
+        move    $a1, $s1
+        li      $a2, 66
+        jal     write_temp
+        j       done_b_state
 kill_b:
+        move    $a0, $s0
+        move    $a1, $s1
+        li      $a2, 32
+        jal     write_temp
+done_b_state:
         #-=-=-=-=-=-=-=-=-=-=-=-
         j       done_cyc
 cell_is_dead:                                 # cell is dead
         #-=-=-=-=-=-=-=-=-=-=-=-
-                
+        sub     $s6, $s4, $s5   # A - B
+        li      $t1, 3
+        li      $t2, -3
+        beq     $t1, $s6, revive_a
+        beq     $t2, $s6, revive_b
+        j       keep_space
+revive_a:
+        move    $a0, $s0
+        move    $a1, $s1
+        li      $a2, 65
+        jal     write_temp
+        j       done_revive
+revive_b:        
+        move    $a0, $s0
+        move    $a1, $s1
+        li      $a2, 66
+        jal     write_temp
+        j       done_revive
+keep_space:
+        move    $a0, $s0
+        move    $a1, $s1
+        li      $a2, 66
+        jal     write_temp 
         #-=-=-=-=-=-=-=-=-=-=-=-
+done_revive:
 done_cyc:
         #=======================        
         addi    $s0, $s0, 1
@@ -639,6 +678,7 @@ fill_loop:
         addi    $sp, $sp, 36
         jr      $ra
 #--------------------------------
+
 
 # Name: Count Neighbors
 # 
