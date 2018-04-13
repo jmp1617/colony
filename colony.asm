@@ -310,7 +310,7 @@ gen_loop:
         la      $v0, PRINT_STRING
         la      $a0, gen_end
         syscall       
-        jal     print_board 
+        jal     print_board
         #=======================
         jal     colony_cycle 
         #=======================
@@ -362,19 +362,21 @@ cyc_outer:
         move    $s0, $zero
 cyc_inner:
         #=======================
-        move    $a0, $s0
-        move    $a1, $s1
+        move    $a0, $s1
+        move    $a1, $s0
         jal     get_val
-        move    $s3, $v0        # ascii at that location
+        move    $s3, $v0
         li      $s4, 65
         li      $s5, 66
-        move    $a0, $s0
-        move    $a1, $s1
+        move    $a0, $s1
+        move    $a1, $s0
         move    $a2, $s4
         jal     count_neigh
         move    $s4, $v0        # count of A neighbors
+        move    $a0, $s1
+        move    $a1, $s0
         move    $a2, $s5
-        jal     count_neigh     
+        jal     count_neigh
         move    $s5, $v0        # count of B neighbors
         li      $t0, 32
         beq     $t0, $s3, cell_is_dead
@@ -389,14 +391,14 @@ cyc_inner:
         slt     $t0, $t0, $s6   # if 3 < A-B ( A>=4)
         bne     $t0, $zero, kill_a
 stay_a:                         # else, A-B = 2 or 3 so it stays alive
-        move    $a0, $s0
-        move    $a1, $s1
+        move    $a0, $s1
+        move    $a1, $s0
         li      $a2, 65
         jal     write_temp
         j       done_a_state
 kill_a:
-        move    $a0, $s0
-        move    $a1, $s1
+        move    $a0, $s1
+        move    $a1, $s0
         li      $a2, 32
         jal     write_temp
 done_a_state:
@@ -412,14 +414,14 @@ cell_is_b:
         slt     $t0, $t0, $s6   # if 3 < B-A ( B>=4)
         bne     $t0, $zero, kill_b
 stay_b:
-        move    $a0, $s0
-        move    $a1, $s1
+        move    $a0, $s1
+        move    $a1, $s0
         li      $a2, 66
         jal     write_temp
         j       done_b_state
 kill_b:
-        move    $a0, $s0
-        move    $a1, $s1
+        move    $a0, $s1
+        move    $a1, $s0
         li      $a2, 32
         jal     write_temp
 done_b_state:
@@ -434,20 +436,20 @@ cell_is_dead:                                 # cell is dead
         beq     $t2, $s6, revive_b
         j       keep_space
 revive_a:
-        move    $a0, $s0
-        move    $a1, $s1
+        move    $a0, $s1
+        move    $a1, $s0
         li      $a2, 65
         jal     write_temp
         j       done_revive
 revive_b:        
-        move    $a0, $s0
-        move    $a1, $s1
+        move    $a0, $s1
+        move    $a1, $s0
         li      $a2, 66
         jal     write_temp
         j       done_revive
 keep_space:
-        move    $a0, $s0
-        move    $a1, $s1
+        move    $a0, $s1
+        move    $a1, $s0
         li      $a2, 32
         jal     write_temp 
         #-=-=-=-=-=-=-=-=-=-=-=-
@@ -773,8 +775,8 @@ neigh_check:
         add     $t1, $t1, $s5   # mod the board size
         div     $t1, $s5
         mfhi    $t1
-        move    $a0, $t1
-        move    $a1, $t0
+        move    $a0, $t0
+        move    $a1, $t1
         jal     get_val
         beq     $a2, $v0, friend_n
         j       done_n
