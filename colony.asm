@@ -448,7 +448,7 @@ revive_b:
 keep_space:
         move    $a0, $s0
         move    $a1, $s1
-        li      $a2, 66
+        li      $a2, 32
         jal     write_temp 
         #-=-=-=-=-=-=-=-=-=-=-=-
 done_revive:
@@ -459,6 +459,7 @@ done_cyc:
         addi    $s1, $s1, 1
         bne     $s2, $s1, cyc_outer
 
+        jal     copy_to_main
 #-------------------------------
         lw      $ra, 0($sp)
         lw      $s0, 4($sp)
